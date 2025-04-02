@@ -205,6 +205,9 @@ def send_text_notification(message):
 
 
 def compare_and_notify(current_state, last_state):
+    message = "TEST: Quadeca website tracker is working!"
+    send_text_notification(message)
+    
     changes_detected = False
    
     if current_state['merch_hash'] != last_state['merch_hash']:
