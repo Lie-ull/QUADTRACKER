@@ -11,7 +11,7 @@ QUADECA_TOUR_URL = "https://quadeca.com/pages/tour"
 DATA_FILE = "last_known_state.json"
 GITHUB_WORKSPACE = os.environ.get("GITHUB_WORKSPACE", ".")
 
-# Twilio stuff - you'll set these as GitHub secrets
+# Twilio stuff 
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
 TWILIO_FROM_NUMBER = os.environ.get("TWILIO_FROM_NUMBER")
@@ -205,58 +205,19 @@ def send_text_notification(message):
 
 
 def compare_and_notify(current_state, last_state):
-    """Compare current and previous states and send notifications if needed."""
-    notifications = []
-
-    # Check if there are changes to merch
+    changes_detected = False
+   
     if current_state['merch_hash'] != last_state['merch_hash']:
-        # Get all product titles from current and previous states
-        current_titles = set()
-        for item in current_state['merch_items']:
-            current_titles.add(item['title'])
-
-        previous_titles = set()
-        for item in last_state['merch_items']:
-            previous_titles.add(item['title'])
-
-        # Find new titles (in current but not in previous)
-        new_titles = current_titles - previous_titles
-
-        # Check for previously sold out items now in stock
-        back_in_stock = []
-        for current_item in current_state['merch_items']:
-            for previous_item in last_state['merch_items']:
-                if (current_item['title'] == previous_item['title'] and
-                        previous_item.get('sold_out', True) and
-                        not current_item.get('sold_out', True)):
-                    back_in_stock.append(current_item['title'])
-
-        # Create notifications
-        if new_titles:
-            notifications.append(f"New Quadeca merch found: {', '.join(new_titles)}")
-        if back_in_stock:
-            notifications.append(f"Items back in stock: {', '.join(back_in_stock)}")
-        if not new_titles and not back_in_stock:
-            notifications.append("Changes detected on Quadeca's merch page!")
-
-    # Check if there are changes to tour info
-    if current_state['tour_hash'] != last_state['tour_hash']:
-        # Try to identify new tour dates
-        if current_state['tour_dates'] and not last_state['tour_dates']:
-            notifications.append(f"Quadeca tour dates found! {len(current_state['tour_dates'])} dates available.")
-        elif len(current_state['tour_dates']) > len(last_state['tour_dates']):
-            new_count = len(current_state['tour_dates']) - len(last_state['tour_dates'])
-            notifications.append(f"{new_count} new Quadeca tour dates added!")
-        else:
-            notifications.append("Changes detected on Quadeca's tour page!")
-
-    # Send notifications if we have any
-    if notifications:
-        message = "QUADECA UPDATE: " + " ".join(notifications) + " Check the website for details!"
+        message = "QUAD MERCH UPDATE!"
         send_text_notification(message)
-        return True  # Changes were detected
-
-    return False  # No changes detected
+        changes_detected = True
+    
+    if current_state['tour_hash'] != last_state['tour_hash']:
+        message = "QUADECA TOUR UPDATE!"
+        send_text_notification(message)
+        changes_detected = True
+    
+    return changes_detected
 
 
 def main():
